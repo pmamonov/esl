@@ -39,14 +39,40 @@ volatile unsigned int CNTVAL1;
 volatile unsigned int CNTVAL2;
 volatile unsigned int CNTVAL3;
 
+#define SPI_PORT PORTB
+#if defined(__AVR_ATmega8__)
+#define SPI_MOSI 3
+#define SPI_CLK 5
+#elif 
+#define SPI_MOSI 5
+#define SPI_CLK 7
+#endif
+
+#define SPI_CLK_DELAY4 0.25
+
+inline void spi_transmit(uint8_t b){
+  uint8_t i=8;
+  while (i--){
+    (b&(1<<i)) ? (SPI_PORT|=1<<SPI_MOSI) : (SPI_PORT&=~(1<<SPI_MOSI));
+    _delay_ms(SPI_CLK_DELAY4);
+    SPI_PORT |= 1<<SPI_CLK;
+    _delay_ms(2*SPI_CLK_DELAY4);
+    SPI_PORT &= ~(1<<SPI_CLK);
+    _delay_ms(SPI_CLK_DELAY4);
+  }
+}
+
 inline void start(){
 // TODO: send vals to DAC
 		SSPORT &= ~(1<<SSPIN);
-
+/*
 		SPDR=sparam.v>>6;
 	  while (!(SPSR & (1<<SPIF)));//wait for transmission to finish
 		SPDR=sparam.v<<2;
 	  while (!(SPSR & (1<<SPIF)));//wait for transmission to finish
+*/
+    spi_transmit(sparam.v>>6);
+    spi_transmit(sparam.v<<2);
 
 		SSPORT |= 1<<SSPIN;
 
@@ -78,8 +104,6 @@ ISR(TIMER1_OVF_vect){
 		OPORT |= 1<<OPIN;
 	}
 }
-
-volatile uint8_t val, *addr;
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 	usbRequest_t *rq = (void *)data;
@@ -123,7 +147,7 @@ void main(void){
 #elif defined (__AVR_ATmega32__)
 	DDRB |= (1<<7)|(1<<5)|(1<<4);
 #endif
-  SPCR = (1<<SPE)|(1<<MSTR)|(3<<SPR0);// f=fosc/128 == ~100kHz
+//  SPCR = (1<<SPE)|(1<<MSTR)|(3<<SPR0);// f=fosc/128 == ~100kHz
 
 	usbInit();
 	usbDeviceDisconnect();  /* enforce re-enumeration, do this while interrupts are disabled! */

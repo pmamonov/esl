@@ -1,4 +1,4 @@
-DEVICE  = atmega32
+DEVICE  = atmega8
 F_CPU   = 12000000	# in Hz
 
 CFLAGS  = -Iusbdrv -I. -DDEBUG_LEVEL=0
@@ -18,10 +18,10 @@ clean:
 	rm -f main.hex main.lst main.obj main.cof main.list main.map main.eep.hex main.elf *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s
 
 fuse:
-#	avrdude -P usb -c usbasp -p m8 -U lfuse:w:??:m
+	avrdude -P usb -c usbasp -p m8 -U lfuse:w:0xff:m -U hfuse:w:0xc9:m
 
 load:
-	avrdude -P usb -c usbasp -p m32 -U flash:w:main.hex:i
+	avrdude -P usb -c usbasp -p m8 -U flash:w:main.hex:i
 
 # Generic rule for compiling C files:
 .c.o:
