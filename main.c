@@ -43,7 +43,7 @@ volatile unsigned int CNTVAL3;
 #if defined(__AVR_ATmega8__)
 #define SPI_MOSI 3
 #define SPI_CLK 5
-#elif 
+#elif defined(__AVR_ATmega32__)
 #define SPI_MOSI 5
 #define SPI_CLK 7
 #endif
