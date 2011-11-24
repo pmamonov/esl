@@ -8,6 +8,9 @@ class ESL:
   Product = "ESL"
 
   def __init__(self):
+    self.reconnect()
+
+  def reconnect(self):
     self.devh=None
     for bus in usb.busses():
       for dev in bus.devices:
@@ -17,17 +20,31 @@ class ESL:
             self.devh = devh
             print "Device found."
     if not self.devh: raise NameError, "Device not found"
+  
+  def cmd(self, cmd, buf=None):
+    ok=False
+    retry_count=1
+    while not ok and retry_count:
+      try:
+        if buf:
+          self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, cmd,buf)
+        else:
+          self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, cmd,0)
+        ok=True
+      except usb.USBError as usberr:
+        print "USBError:", usberr
+        self.reconnect()
+        retry_count-=1
 
   def start(self):
-     self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, 1, 0)
+    self.cmd(1)
 
   def stop(self):
-     self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, 0, 0)
+    self.cmd(0)
 
   def set_params(self,t,n,t1,w,amp):
-    print t,n,t1,w,amp
-    self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, 2,\
-      struct.pack("<hhhhh", ms2tick*t, n , ms2tick*t1, ms2tick*w, amp))
+    self.cmd(2,struct.pack("<hhhhh", ms2tick*t, n , ms2tick*t1, ms2tick*w, amp))
+
 if __name__=="__main__":
   from Tkinter import *
   from tkMessageBox import showerror
