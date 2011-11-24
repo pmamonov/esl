@@ -25,10 +25,19 @@ class ESL:
      self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, 0, 0)
 
   def set_params(self,t,n,t1,w,amp):
+    print t,n,t1,w,amp
     self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, 2,\
       struct.pack("<hhhhh", ms2tick*t, n , ms2tick*t1, ms2tick*w, amp))
 if __name__=="__main__":
   from Tkinter import *
+  from tkMessageBox import showerror
+  
+  try:
+  	esl=ESL()
+  except NameError:
+  	showerror("ERROR", "Device not found. Ask KUZYA for one.")
+  	sys.exit(1)
+  	
 
   root=Tk()
   root.title("ElectroStimuLator")
@@ -64,8 +73,8 @@ if __name__=="__main__":
   enA=Entry(frInputs)
   enA.pack(side=TOP,anchor='nw')
   
-  Button(frBut, text="Apply",command=lambda x=1: 1).pack(side=LEFT)
-  Button(frBut, text="Start").pack(side=LEFT)
+  Button(frBut, text="Apply",command=lambda: esl.set_params(float(enT.get()),int(enN.get()),float(enT1.get()), float(enW.get()),float(enA.get()))).pack(side=LEFT)
+  Button(frBut, text="Start", command=lambda: esl.start()).pack(side=LEFT)
   Button(frBut, text="Single").pack(side=LEFT)
-  Button(frBut, text="Stop").pack(side=LEFT)
+  Button(frBut, text="Stop",command=lambda: esl.start()).pack(side=LEFT)
   root.mainloop()
