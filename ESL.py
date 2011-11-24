@@ -74,7 +74,7 @@ if __name__=="__main__":
   enA.pack(side=TOP,anchor='nw')
   
   Button(frBut, text="Apply",command=lambda: esl.set_params(float(enT.get()),int(enN.get()),float(enT1.get()), float(enW.get()),float(enA.get()))).pack(side=LEFT)
-  Button(frBut, text="Start", command=lambda: esl.start()).pack(side=LEFT)
+  Button(frBut, text="Start", command=esl.start).pack(side=LEFT)
   Button(frBut, text="Single").pack(side=LEFT)
-  Button(frBut, text="Stop",command=lambda: esl.start()).pack(side=LEFT)
+  Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
   root.mainloop()
