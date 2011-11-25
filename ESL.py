@@ -23,8 +23,9 @@ class ESL:
   
   def cmd(self, cmd, buf=None):
     ok=False
-    retry_count=1
-    while not ok and retry_count:
+#    retry_count=1
+#    while not ok and retry_count:
+    while not ok:
       try:
         if buf:
           self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, cmd,buf)
@@ -34,7 +35,9 @@ class ESL:
       except usb.USBError as usberr:
         print "USBError:", usberr
         self.reconnect()
-        retry_count-=1
+#        retry_count-=1
+      except AttributeError:
+        self.reconnect()
 
   def start(self):
     self.cmd(1)
