@@ -62,6 +62,10 @@ if __name__=="__main__":
   root=Tk()
   root.title("ElectroStimuLator")
   root.resizable(0,0)
+  
+  pic=PhotoImage(file="imp.gif", master=root)
+  lpic=Label(root,image=pic )
+  lpic.pack(side=TOP)
 
   frInp=Frame(root)
   frInp.pack(side=TOP)
