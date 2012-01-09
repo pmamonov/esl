@@ -75,12 +75,13 @@ class ESL:
       if v*confac > mx: p[k]=mx/confac
 
     if p['2n']*p['3t1']>p['1t'] or p['4w']>p['3t1']: raise NameError, "Inconsistent parameters values"
-    self.cmd(2,struct.pack("<hhhhh", *map(lambda k: self.lim[k][3]*p[k], ('1t','2n','3t1','4w','5a'))))
+    self.cmd(2,struct.pack("<HHHHH", *map(lambda k: self.lim[k][3]*p[k], ('1t','2n','3t1','4w','5a'))))
     return p
 
 if __name__=="__main__":
   from Tkinter import *
   from tkMessageBox import showerror
+  from time import time,sleep
 
   def apply_params():
     global esl,p_inputs
@@ -90,11 +91,40 @@ if __name__=="__main__":
       p_vals=esl.set_params(**p_vals)
     except:
       showerror("ERROR", sys.exc_info()[1])
+      raise NameError, "Failed to update stimulation parameters."
     else:
       for k in p_inputs.keys():
         p_inputs[k].delete(0,END)
         p_inputs[k].insert(0,str(p_vals[k]))
-  
+
+  def start():
+    global esl
+    try:
+      apply_params()
+    except NameError, err:
+      showerror("ERROR", err)
+    else:
+      esl.start()
+
+  def single():
+    global esl,p_inputs
+    T=0xffff/ms2tick
+    t=p_inputs['1t'].get()
+    t1=float(p_inputs['3t1'].get())
+    n=float(p_inputs['2n'].get())
+
+    if (n*t1+100) > T: 
+      s="Pulse train is too long. Adjust parameters so that (N*T1 + 100) < Tmax."
+      showerror("ERROR", s)
+      raise NameError, s
+
+    p_inputs['1t'].delete(0,END); p_inputs['1t'].insert(0,str(T))
+    esl.stop()
+    start()
+    sleep(1e-3*(n*t1+50))
+    esl.stop()
+    p_inputs['1t'].delete(0,END); p_inputs['1t'].insert(0,t)
+
   p_inputs={}
 
   try:
@@ -134,7 +164,7 @@ if __name__=="__main__":
     Label(frLims,text= "%.2f - %.2f"%tuple(map(lambda v: v/confac, (mn,mx))) ).pack(side=TOP,anchor='nw')
 
   Button(frBut, text="Apply",command=apply_params).pack(side=LEFT)
-  Button(frBut, text="Start", command=esl.start).pack(side=LEFT)
-  Button(frBut, text="Single", command=lambda: showerror("Not Implemented", "This function is not implemented yet")).pack(side=LEFT)
+  Button(frBut, text="Start", command=start).pack(side=LEFT)
+  Button(frBut, text="Single", command=single).pack(side=LEFT)
   Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
   root.mainloop()
