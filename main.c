@@ -6,6 +6,8 @@
 #define CMD_STOP 0
 #define CMD_START 1
 #define CMD_PARAMS 2
+#define CMD_SINGLE 3
+#define SINGLE 2
 
 #define ODDR DDRB
 #define OPORT PORTB
@@ -63,7 +65,6 @@ inline void spi_transmit(uint8_t b){
 }
 
 inline void start(){
-// TODO: send vals to DAC
 		SSPORT &= ~(1<<SSPIN);
 /*
 		SPDR=sparam.v>>6;
@@ -77,27 +78,31 @@ inline void start(){
 		SSPORT |= 1<<SSPIN;
 
 		n=sparam.n;
-		CNTVAL1 = 0xffff-sparam.w+1;
-		CNTVAL2 = 0xffff-(sparam.t1-sparam.w)+1;
-		CNTVAL3 = 0xffff-(sparam.t-sparam.n*sparam.t1)+1;
+		CNTVAL1 = (0xffff-sparam.w)+1;
+		CNTVAL2 = (sparam.t1-sparam.w) ? (0xffff-(sparam.t1-sparam.w))+1 : 0xffff;
+		CNTVAL3 = (sparam.t-(sparam.n-1)*sparam.t1-sparam.w) ? (0xffff-(sparam.t-(sparam.n-1)*sparam.t1-sparam.w))+1 : 0xffff;
 
-		OPORT &= ~(1<<OPIN);
+		OPORT |= (1<<OPIN);
+    TCNT1 = CNTVAL1;
+    TIFR = 1<<TOV1;
 		TIMSK |= (1<<TOIE1);
 }
 
 inline void stop(){
 		TIMSK &= ~(1<<TOIE1);
 		OPORT &= ~(1<<OPIN);
+    run=0;
 }
 
 ISR(TIMER1_OVF_vect){
 	if (OPORT & (1<<OPIN)){
-		TCNT1=CNTVAL2;
 		OPORT &= ~(1<<OPIN);
 		if (--n==0){
 			TCNT1=CNTVAL3;
 			n=sparam.n;
+      if (run & SINGLE) stop();
 		}
+    else{TCNT1=CNTVAL2;}
 	}
 	else{
 		TCNT1 = CNTVAL1;
@@ -119,6 +124,11 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 
 		case CMD_START:
 		run=1;
+		start();
+		break;
+
+		case CMD_SINGLE:
+		run=3;
 		start();
 		break;
 
