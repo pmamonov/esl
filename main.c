@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/eeprom.h>
 #include <util/delay.h>
 #include "usbdrv.h"
 
@@ -7,6 +8,10 @@
 #define CMD_START 1
 #define CMD_PARAMS 2
 #define CMD_SINGLE 3
+#define CMD_GETPARAMS 4
+#define CMD_STORE 5
+#define CMD_LOAD 6
+
 #define SINGLE 2
 
 #define ODDR DDRB
@@ -51,6 +56,16 @@ volatile unsigned int CNTVAL3;
 #endif
 
 #define SPI_CLK_DELAY4 0.25
+
+inline void parstore(){
+  eeprom_write_dword(0, 0xdeadbeefUL);
+  eeprom_write_block(&sparam, 4, sizeof(sparam));
+}
+
+inline void parload(){
+  if (eeprom_read_dword(0) == 0xdeadbeefUL)
+    eeprom_read_block(&sparam, 4, sizeof(sparam));
+}
 
 inline void spi_transmit(uint8_t b){
   uint8_t i=8;
@@ -131,6 +146,18 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 		run=3;
 		start();
 		break;
+
+    case CMD_GETPARAMS:
+      usbMsgPtr=&sparam;
+      return sizeof(sparam);
+
+    case CMD_STORE:
+      parstore();
+      break;
+
+    case CMD_LOAD:
+      parload();
+      break;
 
 		default:
 		break;

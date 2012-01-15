@@ -40,16 +40,17 @@ class ESL:
       else:
         raise NameError, "Device not found"
   
-  def cmd(self, cmd, buf=None):
+  def cmd(self, cmd, buf=0):
     ok=False
+    r=()
 #    retry_count=1
 #    while not ok and retry_count:
     while not ok:
       try:
-        if buf:
-          self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, cmd,buf)
+        if not type(buf) is int:
+          self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_OUT, cmd,buf,timeout=500)
         else:
-          self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, cmd,0)
+          r=self.devh.controlMsg(usb.TYPE_VENDOR | usb.RECIP_DEVICE | usb.ENDPOINT_IN, cmd,buf,timeout=500)
         ok=True
       except usb.USBError as usberr:
         print "USBError:", usberr
@@ -57,6 +58,7 @@ class ESL:
 #        retry_count-=1
       except AttributeError:
         self.reconnect()
+    return r
 
   def start(self):
     self.cmd(1)
@@ -70,9 +72,20 @@ class ESL:
   def set_params(self,**p):
     if p['n']*p['t1']>p['t'] or p['w']>p['t1']: raise NameError, "Inconsistent parameters values"
     s=struct.pack("<HHHHH", *map(lambda k: p[k], ('t','n','t1','w','a')))
-    for c in s: print "%02x "%ord(c),
-    print ""
+#    for c in s: print "%02x "%ord(c),
+#    print ""
     self.cmd(2,struct.pack("<HHHHH", *map(lambda k: p[k], ('t','n','t1','w','a'))))
+
+  def get_params(self):
+    r=self.cmd(4,12)
+    print r
+    return map(lambda i: r[2*i]+(r[2*i+1]<<8),range(5))
+
+  def store(self):
+    self.cmd(5)
+
+  def load(self):
+    self.cmd(6)
 
 
 
@@ -85,7 +98,10 @@ if __name__=="__main__":
 
   def parvalidate (event):
     global p_inputs,p_limits
-    k=event.widget.esl_input_name
+    if type(event) is str:
+      k=event
+    else:
+      k=event.widget.esl_input_name
     ptxt=p_inputs[k].get()
     if len(ptxt):
       mn,mx,c,typ = map(lambda k1: p_limits[k][k1], ('min','max','c','typ'))
@@ -156,24 +172,10 @@ if __name__=="__main__":
     else:
       esl.single()
 
-    """
-    T=0xffff/ms2tick
-    t=p_inputs['t'].get()
-    t1=float(p_inputs['t1'].get())
-    n=float(p_inputs['n'].get())
-
-    if (n*t1+100) > T: 
-      s="Pulse train is too long. Adjust parameters so that (N*T1 + 100) < Tmax."
-      showerror("ERROR", s)
-      raise NameError, s
-
-    p_inputs['t'].delete(0,END); p_inputs['t'].insert(0,str(T))
-    esl.stop()
-    start()
-    sleep(1e-3*(n*t1+50))
-    esl.stop()
-    p_inputs['t'].delete(0,END); p_inputs['t'].insert(0,t)
-    """
+  def quit():
+    global esl,root
+    esl.store()
+    root.destroy()
 
 
   p_limits={'t':{'min':1,'max':0xffff,'label':'T, ms','c':ms2tick,'typ':float},
@@ -193,7 +195,7 @@ if __name__=="__main__":
   except NameError:
   	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
   	sys.exit(1)
-  	
+  
 
   root=Tk()
   root.title("ElectroStimuLator")
@@ -209,7 +211,7 @@ if __name__=="__main__":
   frMnu.pack(side=TOP)
   Button(frMnu, text="Load", command=lambda: load(tkFileDialog.askopenfilename())).pack(side=LEFT)
   Button(frMnu, text="Save", command=lambda: save(tkFileDialog.asksaveasfilename())).pack(side=LEFT)
-  Button(frMnu, text="Quit", command=root.destroy).pack(side=LEFT)
+  Button(frMnu, text="Quit", command=quit).pack(side=LEFT)
 
   frInp=Frame(root)
   frInp.pack(side=TOP)
@@ -241,4 +243,11 @@ if __name__=="__main__":
   Button(frBut, text="Single", command=single).pack(side=LEFT)
   Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
   showinfo("HINT", "HINT: Use TAB / SHIFT+TAB to jump between controls. Use SPACE to push buttons.")
+
+  esl.load()
+  r=esl.get_params()
+  i2k=['t','n','t1','w','a']
+  map(lambda i: p_inputs[i2k[i]].set(str( r[i]/p_limits[i2k[i]]['c'] )), range(5))
+  map(parvalidate, ('t', 't1'))
+
   root.mainloop()
