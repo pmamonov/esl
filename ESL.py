@@ -71,14 +71,10 @@ class ESL:
 
   def set_params(self,**p):
     if p['n']*p['t1']>p['t'] or p['w']>p['t1']: raise NameError, "Inconsistent parameters values"
-    s=struct.pack("<HHHHH", *map(lambda k: p[k], ('t','n','t1','w','a')))
-#    for c in s: print "%02x "%ord(c),
-#    print ""
     self.cmd(2,struct.pack("<HHHHH", *map(lambda k: p[k], ('t','n','t1','w','a'))))
 
   def get_params(self):
     r=self.cmd(4,12)
-    print r
     return map(lambda i: r[2*i]+(r[2*i+1]<<8),range(5))
 
   def store(self):
@@ -135,7 +131,6 @@ if __name__=="__main__":
       fd.close()
 
   def save(f):
-    print f
     fd=open(f,'w')
     for k in p_inputs.keys():
       v=p_inputs[k].get()
@@ -190,8 +185,8 @@ if __name__=="__main__":
   p_inputs={}
 
   try:
-  	esl=ESL(usestub=True)
-#    esl=ESL(usestub=False)
+#  	esl=ESL(usestub=True)
+    esl=ESL(usestub=False)
   except NameError:
   	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
   	sys.exit(1)
