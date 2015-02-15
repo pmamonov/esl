@@ -59,12 +59,12 @@ volatile unsigned int CNTVAL3;
 
 inline void parstore(){
   eeprom_write_dword(0, 0xdeadbeefUL);
-  eeprom_write_block(&sparam, 4, sizeof(sparam));
+  eeprom_write_block((void *)&sparam, (void *)4, sizeof(sparam));
 }
 
 inline void parload(){
   if (eeprom_read_dword(0) == 0xdeadbeefUL)
-    eeprom_read_block(&sparam, 4, sizeof(sparam));
+    eeprom_read_block((void *)&sparam, (void *)4, sizeof(sparam));
 }
 
 inline void spi_transmit(uint8_t b){
@@ -148,7 +148,7 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 		break;
 
     case CMD_GETPARAMS:
-      usbMsgPtr=&sparam;
+      usbMsgPtr=(uchar *)&sparam;
       return sizeof(sparam);
 
     case CMD_STORE:
