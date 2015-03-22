@@ -5,7 +5,7 @@ class usbstub:
   def __init__(self):
     pass
 
-  def controlMsg(self, reqtype, req, l):
+  def controlMsg(self, reqtype, req, l, timeout):
     print "(%d)"%req
     if type(l) is int:
       return tuple(range(l))
