@@ -177,7 +177,7 @@ if __name__=="__main__":
            'n':{'min':1,'max':0xffff,'label':'N', 'c':1,'typ':int},
            't1':{'min':1,'max':0xffff,'label':'T1, ms','c':ms2tick,'typ':float},
            'w':{'min':1,'max':0xffff,'label':'w, ms','c':ms2tick,'typ':float},
-           'a':{'min':1,'max':1023,'label':'A, mV','c':1./8,'typ':float},
+           'a':{'min':1,'max':1023,'label':'A, mV','c':1/10.,'typ':float},
            '1/t':{'max':1./1,'min':1./0xffff,'label':'1/T, Hz','c':1e-3/ms2tick,'typ':float},
            '1/t1':{'max':1./1,'min':1./0xffff,'label':'1/T1, Hz','c':1e-3/ms2tick,'typ':float}
            }
