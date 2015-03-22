@@ -100,16 +100,16 @@ if __name__=="__main__":
       k=event.widget.esl_input_name
     ptxt=p_inputs[k].get()
     if len(ptxt):
-      mn,mx,c,typ = map(lambda k1: p_limits[k][k1], ('min','max','c','typ'))
+      mn,mx,c,typ,fmt = map(lambda k1: p_limits[k][k1], ('min','max','c','typ','fmt'))
       pval=typ(ptxt)
       if pval < mn/c: pval=mn/c
       if pval > mx/c: pval=mx/c
-      ptxt=str(pval)
+      ptxt=fmt % pval
       p_inputs[k].set(ptxt)
 
       ms2hz={'t':'1/t','1/t':'t','t1':'1/t1','1/t1':'t1'}
       if k in ms2hz.keys():
-        p_inputs[ms2hz[k]].set(str(1e3/pval))
+        p_inputs[ms2hz[k]].set(p_limits[ms2hz[k]]['fmt'] % (1e3/pval))
 
       if len(p_inputs['n'].get()):
         if int(p_inputs['n'].get())==1 and k in ('t','1/t','n','w'):
@@ -173,13 +173,13 @@ if __name__=="__main__":
     root.destroy()
 
 
-  p_limits={'t':{'min':1,'max':0xffff,'label':'T, ms','c':ms2tick,'typ':float},
-           'n':{'min':1,'max':0xffff,'label':'N', 'c':1,'typ':int},
-           't1':{'min':1,'max':0xffff,'label':'T1, ms','c':ms2tick,'typ':float},
-           'w':{'min':1,'max':0xffff,'label':'w, ms','c':ms2tick,'typ':float},
-           'a':{'min':1,'max':1023,'label':'A, mV','c':1/10.,'typ':float},
-           '1/t':{'max':1./1,'min':1./0xffff,'label':'1/T, Hz','c':1e-3/ms2tick,'typ':float},
-           '1/t1':{'max':1./1,'min':1./0xffff,'label':'1/T1, Hz','c':1e-3/ms2tick,'typ':float}
+  p_limits={'t':{'min':1,'max':0xffff,'label':'T, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
+           'n':{'min':1,'max':0xffff,'label':'N', 'c':1,'typ':int, "fmt":"%d"},
+           't1':{'min':1,'max':0xffff,'label':'T1, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
+           'w':{'min':1,'max':0xffff,'label':'w, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
+           'a':{'min':1,'max':1023,'label':'A, mV','c':1/10.,'typ':float, "fmt":"%.0f"},
+           '1/t':{'max':1./1,'min':1./0xffff,'label':'1/T, Hz','c':1e-3/ms2tick,'typ':float, "fmt":"%.2f"},
+           '1/t1':{'max':1./1,'min':1./0xffff,'label':'1/T1, Hz','c':1e-3/ms2tick,'typ':float, "fmt":"%.2f"}
            }
 
   p_inputs={}
@@ -242,7 +242,7 @@ if __name__=="__main__":
   esl.load()
   r=esl.get_params()
   i2k=['t','n','t1','w','a']
-  map(lambda i: p_inputs[i2k[i]].set(str( r[i]/p_limits[i2k[i]]['c'] )), range(5))
+  map(lambda i: p_inputs[i2k[i]].set(p_limits[i2k[i]]["fmt"] % (r[i]/p_limits[i2k[i]]['c'])), range(5))
   map(parvalidate, ('t', 't1'))
 
   root.mainloop()
