@@ -237,7 +237,6 @@ if __name__=="__main__":
   Button(frBut, text="Start", command=start).pack(side=LEFT)
   Button(frBut, text="Single", command=single).pack(side=LEFT)
   Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
-  showinfo("HINT", "HINT: Use TAB / SHIFT+TAB to jump between controls. Use SPACE to push buttons.")
 
   esl.load()
   r=esl.get_params()
