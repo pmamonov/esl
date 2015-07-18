@@ -70,8 +70,22 @@ class ESL:
     self.cmd(0)
 
   def set_params(self,**p):
-    if p['n']*p['t1']>p['t'] or p['w']>p['t1']: raise NameError, "Inconsistent parameters values"
-    self.cmd(2,struct.pack("<HHHHH", *map(lambda k: p[k], ('t','n','t1','w','a'))))
+    params_list = ('t','n','t1','w','a');
+
+    for k in params_list:
+      if not k in p.keys():
+        raise NameError, "Not enough arguments: %s is missing" % k
+
+    if (reduce(lambda a, b: a or b,
+               map(lambda k: p[k] < 1 or p[k] > 0xffff,
+                   params_list))):
+      raise NameError, "Parameter(s) value(s) are out of bounds"
+
+    if (p['n'] * p['t1'] > p['t'] or
+        p['w'] > p['t1']):
+      raise NameError, "Inconsistent parameters values"
+
+    self.cmd(2,struct.pack("<HHHHH", *map(lambda k: p[k], params_list)))
 
   def get_params(self):
     r=self.cmd(4,12)
