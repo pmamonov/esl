@@ -8,7 +8,7 @@ class usbstub:
   def controlMsg(self, reqtype, req, l, timeout):
     print "(%d)"%req
     if type(l) is int:
-      return tuple(range(l))
+      return (0x50,0x12,0x0A,0x00,0xEB,0x00,0x5E,0x00,0x64,0x00)
     else:
       for s in l: print "%02X"%ord(s),
       print ""
@@ -26,13 +26,6 @@ class ESL:
 
   def reconnect(self):
     self.devh=None
-    for bus in usb.busses():
-      for dev in bus.devices:
-        if dev.idVendor == self.idVendor and dev.idProduct == self.idProduct:
-          devh = dev.open()
-          if devh.getString(dev.iManufacturer, len(self.Manufacturer)) == self.Manufacturer and  devh.getString(dev.iProduct, len(self.Product)) == self.Product:
-            self.devh = devh
-            print "Device found."
     if not self.devh:
       if self.usestub:
         print >>sys.stderr, "WARNING: Device NOT found! Using software stub."
@@ -251,7 +244,7 @@ if __name__=="__main__":
   p_inputs={}
 
   try:
-    esl=ESL(usestub=False)
+    esl=ESL(usestub=True)
   except NameError:
   	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
   	sys.exit(1)
