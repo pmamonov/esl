@@ -106,33 +106,49 @@ if __name__=="__main__":
   from time import time,sleep
   import os.path
 
-  def parvalidate (event):
-    global p_inputs,p_limits
+  active_input = None
+  
+  def set_active_input(event):
+    global active_input
+    active_input = event.widget.esl_input_name
+    adjust_params(active_input)
+
+  def adjust_params(event):
+    global p_inputs, p_limits
+    
+    # get updated input name into k
     if type(event) is str:
       k=event
     else:
       k=event.widget.esl_input_name
+
+    # input contents
     ptxt=p_inputs[k].get()
+
+    # conjugated inputs dictionary
+    ms2hz={'t':'1/t','1/t':'t','t1':'1/t1','1/t1':'t1'}
+
     if len(ptxt):
+      # in input is not empty
+      # adjust the value to fit in the bounds
       mn,mx,c,typ,fmt = map(lambda k1: p_limits[k][k1], ('min','max','c','typ','fmt'))
       pval=typ(ptxt)
       if pval < mn/c: pval=mn/c
       if pval > mx/c: pval=mx/c
       ptxt=fmt % pval
       p_inputs[k].set(ptxt)
-
-      ms2hz={'t':'1/t','1/t':'t','t1':'1/t1','1/t1':'t1'}
+      
+      # set conjugate param value
       if k in ms2hz.keys():
         p_inputs[ms2hz[k]].set(p_limits[ms2hz[k]]['fmt'] % (1e3/pval))
 
-      if len(p_inputs['n'].get()):
-        if int(p_inputs['n'].get())==1 and k in ('t','1/t','n','w'):
-          if len(p_inputs['t'].get()):
-            p_inputs['t1'].set(p_inputs['t'].get())
-            p_inputs['1/t1'].set(p_inputs['1/t'].get())
-          elif len(p_inputs['w'].get()):
-            p_inputs['t1'].set(p_inputs['w'].get())
-            p_inputs['1/t1'].set(1e3/float(p_inputs['w'].get()))
+    else:
+      # if input is emty...
+      if k in ms2hz.keys() and len(p_inputs[ms2hz[k]].get()):
+        # ...set its value from conjugated input (if any)
+        typ = p_limits[ms2hz[k]]['typ']
+        v = typ(p_inputs[ms2hz[k]].get())
+        p_inputs[k].set(p_limits[k]['fmt'] % (1e3 / v))
 
     return False
 
@@ -153,7 +169,11 @@ if __name__=="__main__":
     fd.close()
 
   def apply_params():
-    global esl,p_inputs,p_limits
+    global esl, p_inputs, p_limits
+
+    if active_input:
+      adjust_params(active_input)
+
     p_vals={}
     try:
       for k in p_inputs.keys(): p_vals[k]=p_limits[k]['c']*float(p_inputs[k].get())
@@ -199,7 +219,7 @@ if __name__=="__main__":
   p_inputs={}
 
   try:
-#  	esl=ESL(usestub=True)
+#    esl=ESL(usestub=True)
     esl=ESL(usestub=False)
   except NameError:
   	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
@@ -233,12 +253,14 @@ if __name__=="__main__":
   frLims.pack(side=LEFT)
 
   for k in ('t','1/t','n','t1','1/t1','w','a'):
-    mn,mx,label,confac,typ = map(lambda k1: p_limits[k][k1], ('min','max','label','c','typ'))
+    mn,mx,label,confac,typ = map(lambda k1: p_limits[k][k1],
+                                 ('min','max','label','c','typ'))
     Label(frLabels,text=label).pack(side=TOP,anchor='nw')
     vtxt=StringVar()
     en=Entry(frInputs, width=7, textvariable=vtxt)
     en.pack(side=TOP,anchor='nw')
-    en.bind("<FocusOut>", parvalidate)
+    en.bind("<FocusOut>", adjust_params)
+    en.bind("<FocusIn>", set_active_input)
     en.esl_input_name=k
     p_inputs[k]=vtxt
 #    Label(frLims,text= "%.2f - %.2f"%tuple(map(lambda v: v/confac, (mn,mx))) ).pack(side=TOP,anchor='nw')
@@ -256,6 +278,6 @@ if __name__=="__main__":
   r=esl.get_params()
   i2k=['t','n','t1','w','a']
   map(lambda i: p_inputs[i2k[i]].set(p_limits[i2k[i]]["fmt"] % (r[i]/p_limits[i2k[i]]['c'])), range(5))
-  map(parvalidate, ('t', 't1'))
+  map(adjust_params, ('t', 't1'))
 
   root.mainloop()
