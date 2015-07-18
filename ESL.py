@@ -43,8 +43,6 @@ class ESL:
   def cmd(self, cmd, buf=0):
     ok=False
     r=()
-#    retry_count=1
-#    while not ok and retry_count:
     while not ok:
       try:
         if not type(buf) is int:
@@ -55,7 +53,6 @@ class ESL:
       except usb.USBError as usberr:
         print "USBError:", usberr
         self.reconnect()
-#        retry_count-=1
       except AttributeError:
         self.reconnect()
     return r
@@ -207,19 +204,53 @@ if __name__=="__main__":
     root.destroy()
 
 
-  p_limits={'t':{'min':1,'max':0xffff,'label':'T, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
-           'n':{'min':1,'max':0xffff,'label':'N', 'c':1,'typ':int, "fmt":"%d"},
-           't1':{'min':1,'max':0xffff,'label':'T1, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
-           'w':{'min':1,'max':0xffff,'label':'w, ms','c':ms2tick,'typ':float, "fmt":"%.2f"},
-           'a':{'min':1,'max':1023,'label':'A, mV','c':1/10.,'typ':float, "fmt":"%.0f"},
-           '1/t':{'max':1./1,'min':1./0xffff,'label':'1/T, Hz','c':1e-3/ms2tick,'typ':float, "fmt":"%.2f"},
-           '1/t1':{'max':1./1,'min':1./0xffff,'label':'1/T1, Hz','c':1e-3/ms2tick,'typ':float, "fmt":"%.2f"}
+  p_limits={'t':{'min':1,
+                 'max':0xffff,
+                 'label':'T, ms',
+                 'c':ms2tick,
+                 'typ':float,
+                 "fmt":"%.2f"},
+           'n':{'min':1,
+                'max':0xffff,
+                'label':'N',
+                'c':1,
+                'typ':int,
+                "fmt":"%d"},
+           't1':{'min':1,
+                 'max':0xffff,
+                 'label':'T1, ms',
+                 'c':ms2tick,
+                 'typ':float,
+                 "fmt":"%.2f"},
+           'w':{'min':1,
+                'max':0xffff,
+                'label':'w, ms',
+                'c':ms2tick,
+                'typ':float,
+                "fmt":"%.2f"},
+           'a':{'min':1,
+                'max':1023,
+                'label':'A, mV',
+                'c':1/10.,
+                'typ':float,
+                "fmt":"%.0f"},
+           '1/t':{'max':1./1,
+                  'min':1./0xffff,
+                  'label':'1/T, Hz',
+                  'c':1e-3/ms2tick,
+                  'typ':float,
+                  "fmt":"%.2f"},
+           '1/t1':{'max':1./1,
+                   'min':1./0xffff,
+                   'label':'1/T1, Hz',
+                   'c':1e-3/ms2tick,
+                   'typ':float,
+                   "fmt":"%.2f"}
            }
 
   p_inputs={}
 
   try:
-#    esl=ESL(usestub=True)
     esl=ESL(usestub=False)
   except NameError:
   	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
@@ -263,13 +294,11 @@ if __name__=="__main__":
     en.bind("<FocusIn>", set_active_input)
     en.esl_input_name=k
     p_inputs[k]=vtxt
-#    Label(frLims,text= "%.2f - %.2f"%tuple(map(lambda v: v/confac, (mn,mx))) ).pack(side=TOP,anchor='nw')
     Label(frLims,text=str(typ(round(mn/confac,2)))+" - "+str(typ(round(mx/confac,2))) ).pack(side=TOP,anchor='nw')
 
 
   frBut=Frame(root)
   frBut.pack(side=TOP)
-#  Button(frBut, text="Apply",command=apply_params).pack(side=LEFT)
   Button(frBut, text="Start", command=start).pack(side=LEFT)
   Button(frBut, text="Single", command=single).pack(side=LEFT)
   Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
