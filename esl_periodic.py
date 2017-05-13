@@ -20,7 +20,8 @@ esl.set_params(**p)
 
 t = time() + period
 while True:
-	print t;
+	print >> sys.stdout, time()
+	sys.stdout.flush()
 	esl.single()
 	while (time() < t):
 		sleep(.01)
