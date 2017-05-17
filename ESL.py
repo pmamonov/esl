@@ -1,5 +1,32 @@
-import usb, struct
+import usb, struct, sys
 ms2tick = 12e3/256
+
+CMD_STOP =      0
+CMD_START =     1
+CMD_PARAMS =    2
+CMD_SINGLE =    3
+CMD_GETPARAMS = 4
+CMD_STORE =     5
+CMD_LOAD =      6
+
+V0 = 0
+V1 = 1
+
+PSZ_V0 = 10
+PSZ_V1 = 14
+
+PSZ = {
+  V0 : PSZ_V0,
+  V1 : PSZ_V1,
+}
+
+FMT = {
+  V0 : "<HHHHH",
+  V1 : "<xxLHHHH",
+}
+
+def list2str(l):
+  return reduce(lambda s, n: s + chr(n), l, "")
 
 class usbstub:
   def __init__(self):
@@ -19,6 +46,8 @@ class ESL:
   idProduct = 0x05dc
   Manufacturer = "piton"
   Product = "ESL"
+  psz = 0
+  ver = 0
 
   def __init__(self, usestub=False):
     self.usestub=usestub
@@ -35,11 +64,24 @@ class ESL:
             print "Device found."
     if not self.devh:
       if self.usestub:
-        print >>sys.stderr, "WARNING: Device NOT found! Using software stub."
+        print "WARNING: Device NOT found! Using software stub."
         self.devh=usbstub()
       else:
-        raise NameError, "Device not found"
-  
+        raise NameError, "Device not found. Fire up your soldering iron, hacker!"
+    else:
+      # detect firmware version
+      r = self.cmd(CMD_GETPARAMS, 100)
+      self.psz = len(r)
+      if self.psz == PSZ[V0]:
+        self.ver = V0
+      else:
+        self.ver = struct.unpack("<H", list2str(r[:2]))[0]
+
+      print "Firmware ver.%d, params size = %d" % (self.ver, self.psz)
+      if (self.psz != PSZ[self.ver]):
+        raise NameError, "Device v.%d returned parameters block of incorrect size %d" % (self.ver, self.psz)
+      self.fmt = FMT[self.ver]
+
   def cmd(self, cmd, buf=0):
     ok=False
     r=()
@@ -58,23 +100,30 @@ class ESL:
     return r
 
   def start(self):
-    self.cmd(1)
+    self.cmd(CMD_START)
 
   def single(self):
-    self.cmd(3)
+    self.cmd(CMD_SINGLE)
 
   def stop(self):
-    self.cmd(0)
+    self.cmd(CMD_STOP)
 
   def set_params(self,**p):
     params_list = ('t','n','t1','w','a');
+    params_max = {
+      't' : 0xffff if self.ver == 0 else 0xffffffff,
+      'n' : 0xffff,
+      't1': 0xffff,
+      'w' : 0xffff,
+      'a' : 0xffff,
+    }
 
     for k in params_list:
       if not k in p.keys():
         raise NameError, "Not enough arguments: %s is missing" % k
 
     if (reduce(lambda a, b: a or b,
-               map(lambda k: p[k] < 1 or p[k] > 0xffff,
+               map(lambda k: p[k] < 1 or p[k] > params_max[k],
                    params_list))):
       raise NameError, "Parameter(s) value(s) are out of bounds"
 
@@ -82,19 +131,17 @@ class ESL:
         p['w'] > p['t1']):
       raise NameError, "Inconsistent parameters values"
 
-    self.cmd(2,struct.pack("<HHHHH", *map(lambda k: p[k], params_list)))
+    self.cmd(CMD_PARAMS, struct.pack(self.fmt, *map(lambda k: p[k], params_list)))
 
   def get_params(self):
-    r=self.cmd(4,12)
-    return map(lambda i: r[2*i]+(r[2*i+1]<<8),range(5))
+    r = list2str(self.cmd(CMD_GETPARAMS, self.psz))
+    return struct.unpack(self.fmt, r)
 
   def store(self):
-    self.cmd(5)
+    self.cmd(CMD_STORE)
 
   def load(self):
-    self.cmd(6)
-
-
+    self.cmd(CMD_LOAD)
 
 if __name__=="__main__":
   from Tkinter import *
@@ -252,10 +299,14 @@ if __name__=="__main__":
 
   try:
     esl=ESL(usestub=False)
-  except NameError:
-  	showerror("ERROR", "Device not found. Fire up your soldering iron, hacker!")
-  	sys.exit(1)
-  
+  except NameError as e:
+    showerror("ERROR", str(e))
+    sys.exit(1)
+
+  # adjust parameters limits
+  if esl.ver == V1:
+    p_limits['t']['max'] = 0xffffffff
+    p_limits['1/t']['min'] = 1./p_limits['t']['max']
 
   root=Tk()
   root.title("ElectroStimuLator")

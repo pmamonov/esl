@@ -4,6 +4,8 @@
 #include <util/delay.h>
 #include "usbdrv.h"
 
+#define VER	1
+
 #define CMD_STOP	0
 #define CMD_START	1
 #define CMD_PARAMS	2
@@ -30,21 +32,22 @@
 
 
 typedef struct {
-	unsigned int t;
+	unsigned int ver;
+	unsigned long t;
 	unsigned int n;
 	unsigned int t1;
 	unsigned int w;
 	unsigned int v;
 } StimParam;
 
-volatile StimParam sparam = {476, 2, 46, 23, 0};
+volatile StimParam sparam = {VER, 476, 2, 46, 23, 0};
 volatile uchar bytesLeft;
 volatile uchar run;
 
 volatile unsigned int n;
 volatile unsigned int CNTVAL1;
 volatile unsigned int CNTVAL2;
-volatile unsigned int CNTVAL3;
+volatile unsigned long CNTVAL3, T;
 
 #define SPI_PORT PORTB
 
@@ -68,6 +71,7 @@ inline void parload()
 {
 	if (eeprom_read_dword(0) == 0xdeadbeefUL)
 		eeprom_read_block((void *)&sparam, (void *)4, sizeof(sparam));
+	sparam.ver = VER;
 }
 
 inline void spi_transmit(uint8_t b)
@@ -105,14 +109,25 @@ inline void start()
 
 	SSPORT |= 1 << SSPIN;
 
+	/* validate parameters */
+	if (!sparam.n)
+		sparam.n = 1;
+	if (!sparam.t)
+		sparam.t = 1;
+	if (!sparam.t1)
+		sparam.t1 = 1;
+	if (!sparam.w)
+		sparam.w = 1;
+	if (sparam.w >= sparam.t1)
+		sparam.t1 = sparam.w + 1;
+	if (sparam.t1 * sparam.n > sparam.t)
+		sparam.t = sparam.t1 * sparam.n + 1;
+
+	T = 0;
 	n = sparam.n;
-	CNTVAL1 = (0xffff - sparam.w) + 1;
-	CNTVAL2 = (sparam.t1 - sparam.w) ?
-		  (0xffff - (sparam.t1 - sparam.w)) + 1 :
-		  0xffff;
-	CNTVAL3 = (sparam.t - (sparam.n - 1) * sparam.t1 - sparam.w) ?
-		  (0xffff - (sparam.t - (sparam.n - 1) * sparam.t1 - sparam.w)) + 1 :
-		  0xffff;
+	CNTVAL1 = 0x10000ul - sparam.w;
+	CNTVAL2 = 0x10000ul - (sparam.t1 - sparam.w);
+	CNTVAL3 = sparam.t - ((sparam.n - 1) * sparam.t1 + sparam.w);
 
 	OPORT |= (1<<OPIN);
 
@@ -175,15 +190,19 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 
 uchar usbFunctionWrite(uchar *data, uchar l)
 {
-	int i;
+	uchar *dst = (uchar *)&sparam;
+	int i, sz = sizeof(sparam);
 
 	if (l > bytesLeft)
 		l = bytesLeft;
 	for (i = 0; i < l; i++)
-		((uchar*)(&sparam))[sizeof(sparam) - bytesLeft--] = data[i];
+		dst[sz - bytesLeft--] = data[i];
 
-	if (!bytesLeft && run)
-		start();
+	if (!bytesLeft) {
+		sparam.ver = VER;
+		if (run)
+			start();
+	}
 
 	return bytesLeft == 0;
 }
@@ -216,21 +235,32 @@ int main(void)
 
 ISR(TIMER1_OVF_vect)
 {
-	if (OPORT & (1<<OPIN)) {
+	if (OPORT & (1 << OPIN)) {
 		OPORT &= ~(1 << OPIN);
-		if (--n==0) {
-			TCNT1 = CNTVAL3;
+		if (--n == 0) {
+			if (CNTVAL3 < 0x10000ul) {
+				TCNT1 = 0x10000ul - CNTVAL3;
+				T = 0;
+			} else
+				T = CNTVAL3 - 0x10000ul;
 			n = sparam.n;
 			if (run & SINGLE)
 				stop();
-		}
-		else {
+		} else
 			TCNT1 = CNTVAL2;
+	} else {
+		if (T == 0) {
+			OPORT |= 1 << OPIN;
+			TCNT1 = CNTVAL1;
+			return;
 		}
-	}
-	else {
-		TCNT1 = CNTVAL1;
-		OPORT |= 1 << OPIN;
+
+		if (T > 0x10000ul) {
+			T -= 0x10000ul;
+		} else {
+			TCNT1 = 0x10000 - T;
+			T = 0;
+		}
 	}
 }
 
