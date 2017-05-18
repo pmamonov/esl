@@ -28,3 +28,7 @@ def pulse_stat(fn):
 					w.std())
 	return dtposed, w
 
+if __name__ == "__main__":
+	import sys
+	fn = sys.argv[1]
+	pulse_stat(fn)
