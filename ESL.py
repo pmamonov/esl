@@ -68,6 +68,9 @@ class ESL:
       if self.usestub:
         print "WARNING: Device NOT found! Using software stub."
         self.devh=usbstub()
+        self.ver = V1
+        self.fmt = FMT[self.ver]
+        self.psz = struct.calcsize(self.fmt)
       else:
         raise NameError, "Device not found. Fire up your soldering iron, hacker!"
     else:
