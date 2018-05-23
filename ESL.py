@@ -8,6 +8,8 @@ CMD_SINGLE =    3
 CMD_GETPARAMS = 4
 CMD_STORE =     5
 CMD_LOAD =      6
+CMD_TRIG_EN =   7
+CMD_TRIG_DIS =  8
 
 V0 = 0
 V1 = 1
@@ -142,6 +144,12 @@ class ESL:
 
   def load(self):
     self.cmd(CMD_LOAD)
+
+  def trig_en(self):
+    self.cmd(CMD_TRIG_EN)
+
+  def trig_dis(self):
+    self.cmd(CMD_TRIG_DIS)
 
 if __name__=="__main__":
   from Tkinter import *
@@ -353,6 +361,8 @@ if __name__=="__main__":
   Button(frBut, text="Start", command=start).pack(side=LEFT)
   Button(frBut, text="Single", command=single).pack(side=LEFT)
   Button(frBut, text="Stop",command=esl.stop).pack(side=LEFT)
+  Button(frBut, text="TrigON",command=esl.trig_en).pack(side=LEFT)
+  Button(frBut, text="TrigOFF",command=esl.trig_dis).pack(side=LEFT)
 
   esl.load()
   r=esl.get_params()

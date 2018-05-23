@@ -13,6 +13,8 @@
 #define CMD_GETPARAMS	4
 #define CMD_STORE	5
 #define CMD_LOAD	6
+#define CMD_TRIG_EN	7
+#define CMD_TRIG_DIS	8
 
 #define SINGLE		2
 
@@ -26,6 +28,12 @@
 	#define MPORT		PORTB
 	#define MPIN		4
 #endif
+
+/* Trigger pin */
+#define TDDR		DDRC
+#define TPORT		PORTC
+#define TPIN		PINC
+#define TBIT		1
 
 #if defined (__AVR_ATmega8__)
 	#define SSPORT	PORTB
@@ -49,7 +57,7 @@ typedef struct {
 
 volatile StimParam sparam = {VER, 476, 2, 46, 23, 0};
 volatile uchar bytesLeft;
-volatile uchar run;
+volatile uchar run, trig_en;
 
 volatile unsigned int n;
 volatile unsigned int CNTVAL1;
@@ -191,6 +199,14 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
 		parload();
 		break;
 
+	case CMD_TRIG_EN:
+		trig_en = 1;
+		break;
+
+	case CMD_TRIG_DIS:
+		trig_en = 0;
+		break;
+
 	default:
 		break;
 	}
@@ -223,6 +239,8 @@ int main(void)
 	run=0;
 	ODDR |= 1 << OPIN;
 	MDDR |= 1 << MPIN;
+	TDDR &= ~(1 << TBIT);
+	TPORT |= 1 << TBIT; /* pull up */
 
 #if defined (__AVR_ATmega8__)
 	DDRB |= (1 << 5) | (1 << 3) | (1 << 2);
@@ -239,8 +257,14 @@ int main(void)
 
 	sei();
 
-	while(1)
+	while(1) {
+		if (trig_en && !run &&
+		    0 == (TPIN & (1 << TBIT))) {
+			run = 3;
+			start();
+		}
 		usbPoll();
+	}
 }
 
 ISR(TIMER1_OVF_vect)
