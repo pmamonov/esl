@@ -20,6 +20,13 @@
 #define OPORT		PORTB
 #define OPIN		0
 
+/* Monitor pin */
+#ifdef __AVR_ATmega8__
+	#define MDDR		DDRB
+	#define MPORT		PORTB
+	#define MPIN		4
+#endif
+
 #if defined (__AVR_ATmega8__)
 	#define SSPORT	PORTB
 	#define SSDDR	DDRB
@@ -130,6 +137,7 @@ inline void start()
 	CNTVAL3 = sparam.t - ((sparam.n - 1) * sparam.t1 + sparam.w);
 
 	OPORT |= (1<<OPIN);
+	MPORT |= (1 << MPIN);
 
 	TCNT1 = CNTVAL1;
 	TIFR = 1 << TOV1;
@@ -140,6 +148,7 @@ inline void stop()
 {
 	TIMSK &= ~(1 << TOIE1);
 	OPORT &= ~(1 << OPIN);
+	MPORT &= ~(1 << MPIN);
 	run=0;
 }
 
@@ -213,6 +222,7 @@ int main(void)
 //	TIMSK |= 1<<TOIE1;
 	run=0;
 	ODDR |= 1 << OPIN;
+	MDDR |= 1 << MPIN;
 
 #if defined (__AVR_ATmega8__)
 	DDRB |= (1 << 5) | (1 << 3) | (1 << 2);
