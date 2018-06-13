@@ -278,12 +278,14 @@ ISR(TIMER1_OVF_vect)
 			} else
 				T = CNTVAL3 - 0x10000ul;
 			n = sparam.n;
-			if (run & SINGLE)
-				stop();
 		} else
 			TCNT1 = CNTVAL2;
 	} else {
 		if (T == 0) {
+			if (n == sparam.n && (run & SINGLE)) {
+				stop();
+				return;
+			}
 			OPORT |= 1 << OPIN;
 			TCNT1 = CNTVAL1;
 			return;
