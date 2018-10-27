@@ -1,28 +1,5 @@
-/* Name: usbconfig.h
- * Project: V-USB, virtual USB port for Atmel's(r) AVR(r) microcontrollers
- * Author: Christian Starkjohann
- * Creation Date: 2005-04-01
- * Tabsize: 4
- * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
- * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig-prototype.h 767 2009-08-22 11:39:22Z cs $
- */
-
 #ifndef __usbconfig_h_included__
 #define __usbconfig_h_included__
-
-/*
-General Description:
-This file is an example configuration (with inline documentation) for the USB
-driver. It configures V-USB for USB D+ connected to Port D bit 2 (which is
-also hardware interrupt 0 on many devices) and USB D- to Port D bit 4. You may
-wire the lines to any other port, as long as D+ is also wired to INT0 (or any
-other hardware interrupt, as long as it is the highest level interrupt, see
-section at the end of this file).
-+ To create your own usbconfig.h file, copy this file to your project's
-+ firmware source directory) and rename it to "usbconfig.h".
-+ Then edit it accordingly.
-*/
 
 /* ---------------------------- Hardware Config ---------------------------- */
 
