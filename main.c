@@ -1,3 +1,13 @@
+
+/*
+ * This is ATMEGA firmware for x-SLON devices.
+ * ------------------------------------------------------------------
+ * Part of "Firmware/API/GUI for x-SLON" project.
+ * http://github.com/pmamonov/esl
+ * 
+ */
+
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>

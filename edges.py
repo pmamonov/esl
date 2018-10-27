@@ -1,3 +1,12 @@
+#!/usr/bin/python
+
+#
+# This is auxilliary program for analyzing pulses.
+# ------------------------------------------------------------------
+# Part of "Firmware/API/GUI for x-SLON" project.
+# http://github.com/pmamonov/esl
+#
+
 from numpy import loadtxt, zeros
 
 def load(fn):

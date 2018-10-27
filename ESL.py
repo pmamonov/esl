@@ -1,3 +1,12 @@
+#!/usr/bin/python
+
+#
+# This is GUI/API script for running stimulation of x-SLON devices.
+# ------------------------------------------------------------------
+# Part of "Firmware/API/GUI for x-SLON" project.
+# http://github.com/pmamonov/esl
+#
+
 import usb, struct, sys
 ms2tick = 12e3/256
 

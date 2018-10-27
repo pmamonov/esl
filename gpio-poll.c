@@ -1,3 +1,13 @@
+
+/*
+ * This is ???????????.
+ * ------------------------------------------------------------------
+ * Part of "Firmware/API/GUI for x-SLON" project.
+ * http://github.com/pmamonov/esl
+ * 
+ */
+
+
 #include <stdio.h>
 #include <poll.h>
 #include <fcntl.h>

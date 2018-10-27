@@ -1,3 +1,12 @@
+#!/usr/bin/python
+
+#
+# This is API usage example script for running stimulation.
+# ------------------------------------------------------------------
+# Part of "Firmware/API/GUI for x-SLON" project.
+# http://github.com/pmamonov/esl
+#
+
 from ESL import ESL, ms2tick
 from time import sleep
 
